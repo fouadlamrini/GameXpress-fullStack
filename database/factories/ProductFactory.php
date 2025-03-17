@@ -24,6 +24,8 @@ class ProductFactory extends Factory
             'stock' => $this->faker->numberBetween(1, 100),
             'status' => $this->faker->randomElement(['available', 'unavailable']),
             'category_id' => $this->faker->numberBetween(1, 10),
+            'sub_category_id' => $this->faker->numberBetween(1, 10),
+            'critical_stock_threshold' => $this->faker->numberBetween(5, 10),            
         ];
     }
 }

@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->decimal('price', 12, 2);
             $table->unsignedInteger('stock');
-            $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('category_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('sub_category_id')->nullable()->constrained()->onDelete('cascade');
             $table->enum('status', ['available', 'unavailable'])->default('available');
             $table->timestamps();
             $table->softDeletes();

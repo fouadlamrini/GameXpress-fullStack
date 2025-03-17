@@ -4,19 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'slug', 'price', 'stock', 'category_id', 'status'
+        'name', 'slug', 'price', 'stock', 'category_id', 'sub_category_id', 'status',
+        'critical_stock_threshold'
     ];
 
-    public function categories()
+    public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function subCategory()
+    {
+        return $this->belongsTo(SubCategory::class);
     }
 
     public function images()
