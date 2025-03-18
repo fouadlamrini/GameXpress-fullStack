@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\CartController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
@@ -41,10 +42,20 @@ Route::prefix('v1')->group(function () {
             });
         });
     });
-});
 
-Route::prefix('v1/admin')->middleware(['auth:sanctum'])->group(function () {
-    Route::middleware('role:user_manager|super_admin')->group(function () {
-        Route::apiResource('users', UserController::class);
+    Route::prefix('client')->middleware('auth:sanctum')->group(function () {
+        Route::prefix('cart')->group(function () {
+            Route::get('/', [CartController::class, 'cart']);
+            Route::post('items', [CartController::class, 'addItem']);        
+            Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
+            Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
+        });
+    });
+
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'cart']);
+        Route::post('items', [CartController::class, 'addItem']);        
+        Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
+        Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
     });
 });
