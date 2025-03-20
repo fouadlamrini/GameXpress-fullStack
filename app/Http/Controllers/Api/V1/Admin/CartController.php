@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\ProductHelper;
+use App\Jobs\DeleteProductJob;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
 use app\Helpers\CartHelper;
 use app\Helpers\ProductHelper;
+
 class CartController extends Controller
 {
     public function addItem(Request $request)
@@ -28,19 +30,18 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Insufficient stock'
             ], 400);
-        } 
+        }
 
         $cart = $this->getCart($request->session_id);
 
         $cartItem = $this->addToCart($cart, $product, $validated['quantity']);
-        
-        $totals = CartHelper::calculateTotal($cart);//fouad
+
+        $totals = CartHelper::calculateTotal($cart);
         return response()->json([
             'message' => 'Item added to cart',
             'cart_item' => $cartItem,
-            'totals' => $totals //fouad
+            'totals' => $totals
         ], 201);
-       
     }
 
     public function updateItem(Request $request, CartItem $cartItem)
@@ -48,41 +49,38 @@ class CartController extends Controller
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
-      
-        if (!ProductHelper::hasEnoughStock($product, $validated['quantity'])) {
+
+        if (!ProductHelper::hasEnoughStock($cartItem->product, $validated['quantity'])) {
             return response()->json([
                 'message' => 'Insufficient stock'
             ], 400);
         }
         $cart = $this->getCart($request->session_id);
-        //fouad
-        $cartItem = $this->addToCart($cart, $product, $validated['quantity']);
+
+        $cartItem = $this->addToCart($cart, $cartItem->product, $validated['quantity']);
         $totals = CartHelper::calculateTotal($cart);
-        //
 
         $this->updateCartItem($cartItem, $validated['quantity']);
-    
+
         return response()->json([
             'message' => 'Cart item updated',
             'cart_item' => $cartItem,
-            'totals' => $totals //fouad
+            'totals' => $totals
         ]);
-       
     }
 
     private function updateCartItem($item, $quantity)
     {
         $item->quantity = $quantity;
         $item->save();
-//fouad
+
         $cart = $item->cart;
         $totals = CartHelper::calculateTotal($cart);
-        //fouad
+
         return [
             'updated_item' => $item->fresh(),
-            'totals' => $totals 
+            'totals' => $totals
         ];
-       // return $item->fresh();
     }
 
     private function addToCart($cart, $product, $quantity)
@@ -97,41 +95,42 @@ class CartController extends Controller
             ],
             ['quantity' => $newQuantity]
         );
-        //fouad
+
         $cart = $cart->fresh();
         $totals = CartHelper::calculateTotal($cart);
-      //  return $cartItem->load('product');
-      //fouad
-      return [
-        'cart_item' => $cartItem->load('product'),
-        'totals' => $totals 
-    ];
+        //  return $cartItem->load('product');
 
+
+        DeleteProductJob::dispatch($cartItem->id)->delay(Carbon::now()->addHours(48));
+        return [
+            'cart_item' => $cartItem->load('product'),
+            'totals' => $totals
+        ];
     }
 
     public function removeItem(CartItem $cartItem)
     {
+        $cartItemId = $cartItem->id;
+
         $cartItem->delete();
-        //fouad
         $cart = $cartItem->cart;
         $totals = CartHelper::calculateTotal($cart);
-        //
+
         return response()->json([
             'message' => 'Item removed from cart',
-            'totals' => $totals //fouad
+            'totals' => $totals
         ]);
-        
     }
 
     public function cart(Request $request)
     {
         $cart = $this->getCart($request->session_id);
-        //fouad
+
         $totals = CartHelper::calculateTotal($cart);
         return response()->json([
             'cart' => $cart,
             'items' => $cart->items,
-            'totals' => $totals  //fouad
+            'totals' => $totals
         ]);
     }
 
@@ -142,27 +141,23 @@ class CartController extends Controller
                 'user_id' => Auth::id()
             ]);
 
-
             $cartSession = Cart::where('session_id', $sessionId)->first();
-
             if ($cartSession) {
-                foreach($cartSession->items as $item) {
-                    $itemExists = $userCart->items()->where('product_id', $item->product->id)->first();
+                $items = $cartSession->items;
+                foreach ($items as $item) {
+                    $itemExists = $userCart::where('product_id', $item->product_id)->first();
 
                     if ($itemExists) {
                         $newQuantity = $itemExists->quantity + $item->quantity;
-                        
-                        if (ProductHelper::hasEnoughStock($itemExists->product, $newQuantity)) {
+                        if (ProductHelper::hasEnoughStock($item->product, $newQuantity)) {
                             $itemExists->quantity = $newQuantity;
                         } else {
-                            $itemExists->quantity = $itemExists->product->stock;
+                            $itemExists->quantity = $item->product->stock;
                         }
-                               
                         $itemExists->save();
-                        $item->delete(); 
-
+                        $item->delete();
                     } else {
-                          $item->cart_id = $userCart->id;                        
+                        $item->cart_id = $userCart->id;
                         $item->save();
                     }
                 }
@@ -175,5 +170,4 @@ class CartController extends Controller
             'session_id' => $sessionId
         ]);
     }
-
 }
