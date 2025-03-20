@@ -54,9 +54,7 @@ Route::prefix('v1')->group(function () {
             Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
             Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
         });
-        // Order routes will be handled by another student
 
-        // Payment management routes
         Route::get('payments', [PaymentController::class, 'index']);
         Route::get('payments/{payment}', [PaymentController::class, 'show']);
         Route::post('payments', [PaymentController::class, 'store']);
