@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
-
+use app\Helpers\CartHelper;
+use app\Helpers\ProductHelper;
 class CartController extends Controller
 {
     public function addItem(Request $request)
@@ -22,20 +23,23 @@ class CartController extends Controller
 
         $product = Product::findOrFail($validated['product_id']);
 
-        if ($product->stock < $validated['quantity']) {
+        if (!ProductHelper::hasEnoughStock($product, $validated['quantity'])) {
             return response()->json([
                 'message' => 'Insufficient stock'
             ], 400);
-        }
+        } 
 
         $cart = $this->getCart($request->session_id);
 
         $cartItem = $this->addToCart($cart, $product, $validated['quantity']);
-
+        
+        $totals = CartHelper::calculateTotal($cart);//fouad
         return response()->json([
             'message' => 'Item added to cart',
-            'cart_item' => $cartItem
+            'cart_item' => $cartItem,
+            'totals' => $totals //fouad
         ], 201);
+       
     }
 
     public function updateItem(Request $request, CartItem $cartItem)
@@ -43,27 +47,41 @@ class CartController extends Controller
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
-
-        if ($cartItem->product->stock < $validated['quantity']) {
+      
+        if (!ProductHelper::hasEnoughStock($product, $validated['quantity'])) {
             return response()->json([
                 'message' => 'Insufficient stock'
             ], 400);
         }
         $cart = $this->getCart($request->session_id);
+        //fouad
+        $cartItem = $this->addToCart($cart, $product, $validated['quantity']);
+        $totals = CartHelper::calculateTotal($cart);
+        //
 
         $this->updateCartItem($cartItem, $validated['quantity']);
-
+    
         return response()->json([
             'message' => 'Cart item updated',
-            'cart_item' => $cartItem
+            'cart_item' => $cartItem,
+            'totals' => $totals //fouad
         ]);
+       
     }
 
     private function updateCartItem($item, $quantity)
     {
         $item->quantity = $quantity;
         $item->save();
-        return $item->fresh();
+//fouad
+        $cart = $item->cart;
+        $totals = CartHelper::calculateTotal($cart);
+        //fouad
+        return [
+            'updated_item' => $item->fresh(),
+            'totals' => $totals 
+        ];
+       // return $item->fresh();
     }
 
     private function addToCart($cart, $product, $quantity)
@@ -78,23 +96,41 @@ class CartController extends Controller
             ],
             ['quantity' => $newQuantity]
         );
-        return $cartItem->load('product');
+        //fouad
+        $cart = $cart->fresh();
+        $totals = CartHelper::calculateTotal($cart);
+      //  return $cartItem->load('product');
+      //fouad
+      return [
+        'cart_item' => $cartItem->load('product'),
+        'totals' => $totals 
+    ];
+
     }
 
     public function removeItem(CartItem $cartItem)
     {
         $cartItem->delete();
+        //fouad
+        $cart = $cartItem->cart;
+        $totals = CartHelper::calculateTotal($cart);
+        //
         return response()->json([
-            'message' => 'Item removed from cart'
+            'message' => 'Item removed from cart',
+            'totals' => $totals //fouad
         ]);
+        
     }
 
     public function cart(Request $request)
     {
         $cart = $this->getCart($request->session_id);
+        //fouad
+        $totals = CartHelper::calculateTotal($cart);
         return response()->json([
             'cart' => $cart,
-            'items' => $cart->items
+            'items' => $cart->items,
+            'totals' => $totals  //fouad
         ]);
     }
 
@@ -110,4 +146,5 @@ class CartController extends Controller
             'session_id' => $sessionId
         ]);
     }
+
 }
