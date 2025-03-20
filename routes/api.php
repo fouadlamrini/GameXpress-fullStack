@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Admin\CartController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\PaymentController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
@@ -37,8 +38,9 @@ Route::prefix('v1')->group(function () {
                 Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy']);
                 Route::put('products/{product}/images/{image}/set-primary', [ProductImageController::class, 'setPrimary']);
                 Route::get('products/{product}/images', [ProductImageController::class, 'index']);
-                Route::get('products/{product}/images/{image}', [ProductImageController::class, 'show']);            
+                Route::get('products/{product}/images/{image}', [ProductImageController::class, 'show']);
             });
+
             Route::middleware('role:user_manager|super_admin')->group(function () {
                 Route::apiResource('users', UserController::class);
             });
@@ -48,10 +50,16 @@ Route::prefix('v1')->group(function () {
     Route::prefix('client')->middleware('auth:sanctum')->group(function () {
         Route::prefix('cart')->group(function () {
             Route::get('/', [CartController::class, 'cart']);
-            Route::post('items', [CartController::class, 'addItem']);        
+            Route::post('items', [CartController::class, 'addItem']);
             Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
             Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
         });
+        // Order routes will be handled by another student
+
+        // Payment management routes
+        Route::get('payments', [PaymentController::class, 'index']);
+        Route::get('payments/{payment}', [PaymentController::class, 'show']);
+        Route::post('payments', [PaymentController::class, 'store']);
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{orderId}', [OrderController::class, 'show']);
         Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancel']);
@@ -59,7 +67,7 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'cart']);
-        Route::post('items', [CartController::class, 'addItem']);        
+        Route::post('items', [CartController::class, 'addItem']);
         Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
         Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
     });
