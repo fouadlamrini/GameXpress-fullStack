@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
+use App\Http\Controllers\Api\V1\Admin\RolePermissionController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,5 +58,19 @@ Route::prefix('v1')->group(function () {
         Route::post('items', [CartController::class, 'addItem']);        
         Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
         Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
+    });
+
+    Route::prefix('v1')->group(function () {
+        Route::prefix('admin')->group(function () {
+            Route::middleware('auth:sanctum')->group(function () {
+                Route::middleware('role:super_admin')->group(function () {
+                    Route::get('/roles', [RolePermissionController::class, 'index']);
+                    Route::get('/roles/{roleId}', [RolePermissionController::class, 'show']);
+                    Route::post('/roles/{roleId}/add-permission', [RolePermissionController::class, 'addPermission']);
+                    Route::post('/roles/{roleId}/remove-permission', [RolePermissionController::class, 'removePermission']);
+                    Route::post('/request-role-permission', [RolePermissionController::class, 'requestRolePermission']);
+                });
+            });
+        });
     });
 });

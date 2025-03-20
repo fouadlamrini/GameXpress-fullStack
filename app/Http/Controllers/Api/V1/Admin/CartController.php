@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Helpers\ProductHelper;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -137,9 +138,37 @@ class CartController extends Controller
     private function getCart($sessionId): Cart
     {
         if (Auth::check()) {
-            return Cart::firstOrCreate([
+            $userCart = Cart::firstOrCreate([
                 'user_id' => Auth::id()
             ]);
+
+
+            $cartSession = Cart::where('session_id', $sessionId)->first();
+
+            if ($cartSession) {
+                foreach($cartSession->items as $item) {
+                    $itemExists = $userCart->items()->where('product_id', $item->product->id)->first();
+
+                    if ($itemExists) {
+                        $newQuantity = $itemExists->quantity + $item->quantity;
+                        
+                        if (ProductHelper::hasEnoughStock($itemExists->product, $newQuantity)) {
+                            $itemExists->quantity = $newQuantity;
+                        } else {
+                            $itemExists->quantity = $itemExists->product->stock;
+                        }
+                               
+                        $itemExists->save();
+                        $item->delete(); 
+
+                    } else {
+                          $item->cart_id = $userCart->id;                        
+                        $item->save();
+                    }
+                }
+            }
+
+            return $userCart;
         }
 
         return Cart::firstOrCreate([
