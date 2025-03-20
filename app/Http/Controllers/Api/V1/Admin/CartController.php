@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ProductHelper;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -15,11 +16,13 @@ class CartController extends Controller
 {
     public function addItem(Request $request)
     {
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'session_id' => 'required_without:user_id'
         ]);
+
 
         $product = Product::findOrFail($validated['product_id']);
 
@@ -30,6 +33,7 @@ class CartController extends Controller
         }
 
         $cart = $this->getCart($request->session_id);
+
 
         $cartItem = $this->addToCart($cart, $product, $validated['quantity']);
 

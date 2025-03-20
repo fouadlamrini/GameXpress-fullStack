@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -14,26 +14,13 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function store()
+    public static function store(Cart $cart)
     {
-        $user = Auth::user();
-
-        $cart = Cart::where('user_id', $user->id)->first();
-
-        if (!$cart) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart is empty or does not exist',
-            ], 404);
-        }
 
         $cartItems = CartItem::where('cart_id', $cart->id)->get();
 
         if ($cartItems->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart is empty',
-            ], 404);
+            return false;
         }
 
         $totalPrice = 0;
@@ -46,7 +33,7 @@ class OrderController extends Controller
 
         try {
             $order = Order::create([
-                'user_id' => $user->id,
+                'user_id' => $cart->user_id,
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
@@ -67,16 +54,12 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return $order;
+            return $order->items;
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create order',
-                'error' => $e->getMessage(),
-            ], 500);
+           return false;
         }
     }
 
