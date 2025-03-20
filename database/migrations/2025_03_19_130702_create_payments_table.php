@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->string('transaction_id')->nullable();
             $table->decimal('amount', 12, 2);
-            $table->json('payment_details')->nullable();
+            $table->json('payment_details')->nullable(); // used to store additional payment-related information that varies depending on the payment type
             $table->timestamps();
         });
     }
