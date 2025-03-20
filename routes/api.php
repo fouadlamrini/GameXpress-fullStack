@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\RolePermissionController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,9 @@ Route::prefix('v1')->group(function () {
             Route::put('items/{cartItem}', [CartController::class, 'updateItem']);
             Route::delete('items/{cartItem}', [CartController::class, 'removeItem']);
         });
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{orderId}', [OrderController::class, 'show']);
+        Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancel']);
     });
 
     Route::prefix('cart')->group(function () {
@@ -73,4 +77,6 @@ Route::prefix('v1')->group(function () {
             });
         });
     });
+
+
 });
