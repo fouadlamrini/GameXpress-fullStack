@@ -25,6 +25,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/dashboard', [DashboardController::class, 'index']);
 
+            //charge
+            Route::get('/charge', [PaymentController::class, 'charge']);
+
 
             Route::middleware('role:product_manager|super_admin')->group(function () {
                 Route::apiResource('categories', CategoryController::class);
