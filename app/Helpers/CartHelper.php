@@ -32,11 +32,6 @@ class CartHelper
 
         $total = $subtotal + $tax;
 
-        return [
-            'subtotal' => $subtotal,
-            'tax' => $tax,
-            'total' => round($total, 2)
-        ];
+        return round($total, 2);
     }
-
 }
