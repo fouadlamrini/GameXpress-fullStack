@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\CartHelper;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
@@ -22,13 +23,7 @@ class OrderController extends Controller
         if ($cartItems->isEmpty()) {
             return false;
         }
-
-        $totalPrice = 0;
-        foreach ($cartItems as $cartItem) {
-            $product = Product::find($cartItem->product_id);
-            $totalPrice += $product->price * $cartItem->quantity;
-        }
-
+        $totalPrice = CartHelper::calculateTotal($cart);
         DB::beginTransaction();
 
         try {
@@ -37,6 +32,7 @@ class OrderController extends Controller
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
+
 
             foreach ($cartItems as $cartItem) {
                 $product = Product::find($cartItem->product_id);
@@ -50,16 +46,14 @@ class OrderController extends Controller
             }
 
             CartItem::where('cart_id', $cart->id)->delete();
-            $cart->delete();
 
             DB::commit();
 
-            return $order->items;
-
+            return $order;
         } catch (\Exception $e) {
             DB::rollBack();
 
-           return false;
+            return $e->getMessage();
         }
     }
 

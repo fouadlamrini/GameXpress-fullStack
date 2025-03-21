@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
 
 Route::prefix('v1')->group(function () {
 
@@ -25,6 +27,9 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/dashboard', [DashboardController::class, 'index']);
+
+            //charge
+            // Route::get('/charge', [PaymentController::class, 'charge']);
 
 
             Route::middleware('role:product_manager|super_admin')->group(function () {
@@ -57,7 +62,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('payments', [PaymentController::class, 'index']);
         Route::get('payments/{payment}', [PaymentController::class, 'show']);
-        Route::post('payments', [PaymentController::class, 'store']);
+        Route::post('payments', [PaymentController::class, 'charge']);
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{orderId}', [OrderController::class, 'show']);
         Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancel']);
@@ -83,6 +88,4 @@ Route::prefix('v1')->group(function () {
             });
         });
     });
-
-
 });

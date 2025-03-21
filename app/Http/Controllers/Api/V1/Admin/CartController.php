@@ -149,7 +149,7 @@ class CartController extends Controller
             if ($cartSession) {
                 $items = $cartSession->items;
                 foreach ($items as $item) {
-                    $itemExists = $userCart::where('product_id', $item->product_id)->first();
+                    $itemExists = $userCart->items()->where('product_id', $item->product_id)->first();
 
                     if ($itemExists) {
                         $newQuantity = $itemExists->quantity + $item->quantity;
