@@ -10,6 +10,9 @@ use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +35,9 @@ class OrderController extends Controller
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
-
+         $admin=User::role("super_admin")->get();
+         $admin[0]->notify(new NewOrderNotification);
+      
 
             foreach ($cartItems as $cartItem) {
                 $product = Product::find($cartItem->product_id);
